@@ -177,3 +177,30 @@ void nfc3d_amiibo_copy_app_data(const uint8_t * src, uint8_t * dst) {
 	memcpy(dst + 0xDC, src + 0xDC, 216);
 }
 
+void nfc3d_amiibo_generate_new_serial(const uint8_t *src)
+{
+
+	uint16_t *ami_nb_wr = (uint16_t *)(src + 0x29);
+	uint16_t *cfg_nb_wr = (uint16_t *)(src + 0xB4);
+
+	/* increment write counters */
+	*ami_nb_wr = htobe16(be16toh(*ami_nb_wr) + 1);
+	*cfg_nb_wr = htobe16(be16toh(*cfg_nb_wr) + 1);
+
+	/*Generate UID*/
+	uint8_t temp;
+	uint8_t *UID;
+	srand((unsigned)time(NULL));
+	for (int i = 1; i < 8; i++)
+	{
+		temp = rand() % 256;
+		UID = (uint8_t *)(src + i);
+		*UID = temp;
+	}
+
+	/*Calculate BCC bytes*/
+	uint8_t BCC1, BCC2;
+	UID = src;
+	UID[3] = 0x88 ^ UID[0] ^ UID[1] ^ UID[2];
+	UID[8] = UID[4] ^ UID[5] ^ UID[6] ^ UID[7];
+}

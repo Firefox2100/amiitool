@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
 #include "keygen.h"
 
 #define NFC3D_AMIIBO_SIZE 520
@@ -25,5 +27,6 @@ bool nfc3d_amiibo_unpack(const nfc3d_amiibo_keys * amiiboKeys, const uint8_t * t
 void nfc3d_amiibo_pack(const nfc3d_amiibo_keys * amiiboKeys, const uint8_t * plain, uint8_t * tag);
 bool nfc3d_amiibo_load_keys(nfc3d_amiibo_keys * amiiboKeys, const char * path);
 void nfc3d_amiibo_copy_app_data(const uint8_t * src, uint8_t * dst);
+void nfc3d_amiibo_generate_new_serial(const uint8_t * src);
 
 #endif

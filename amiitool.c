@@ -26,6 +26,7 @@ void usage() {
 		"   -e encrypt and sign amiibo\n"
 		"   -d decrypt and test amiibo\n"
 		"   -c decrypt, copy AppData and encrypt amiibo\n"
+		"   -r random, randomly generate an UID for spoofing\n"
 		"   -k key set file. For retail amiibo, use \"retail unfixed\" key set\n"
 		"   -i input file. If not specified, stdin will be used.\n"
 		"   -s input save file, save from this file will replace input file ones.\n"
@@ -51,6 +52,7 @@ int main(int argc, char ** argv) {
 			case 'e':
 			case 'd':
 			case 'c':
+			case 'r':
 				op = c;
 				break;
 			case 'i':
@@ -86,7 +88,7 @@ int main(int argc, char ** argv) {
 	}
 
 	uint8_t original[NTAG215_SIZE];
-	uint8_t modified[NFC3D_AMIIBO_SIZE];
+	uint8_t modified[NTAG215_SIZE]={0};
 
 	FILE * f = stdin;
 	if (infile) {
@@ -113,7 +115,32 @@ int main(int argc, char ** argv) {
 				return 6;
 			}
 		}
-	} else { /* copy */
+	}
+	else if (op == 'r')
+	{
+		uint8_t medium[NFC3D_AMIIBO_SIZE];
+
+		if (!nfc3d_amiibo_unpack(&amiiboKeys, original, medium))
+		{
+			fprintf(stderr, "!!! WARNING !!!: Tag signature was NOT valid\n");
+			if (!lenient)
+			{
+				return 6;
+			}
+		}
+
+		size_t readPages = fread(original, 4, NFC3D_AMIIBO_SIZE / 4, f);
+		if (readPages < NFC3D_AMIIBO_SIZE / 4)
+		{
+			fprintf(stderr, "Could not read from save: %s (%d)\n", strerror(errno), errno);
+			return 3;
+		}
+		fclose(f);
+
+		nfc3d_amiibo_generate_new_serial(medium);
+		nfc3d_amiibo_pack(&amiiboKeys, medium, modified);
+	}
+	else { /* copy */
 		uint8_t plain_base[NFC3D_AMIIBO_SIZE];
 		uint8_t plain_save[NFC3D_AMIIBO_SIZE];
 
@@ -148,6 +175,10 @@ int main(int argc, char ** argv) {
 		nfc3d_amiibo_pack(&amiiboKeys, plain_base, modified);
 	}
 
+	//Adding AUTH0 and ACCESS bytes
+	modified[NTAG215_SIZE-13]=0x04;
+	modified[NTAG215_SIZE-12]=0x5f;
+	
 	f = stdout;
 	if (outfile) {
 		f = fopen(outfile, "wb");
