@@ -27,3 +27,6 @@ Examples
 
 - Copy "mario2.bin" Saves (AppData) into "mario1.bin" and save to "mario3.bin"
   > amiitool -c -k retail.bin -i "mario1.bin" -s "mario2.bin" -o "mario3.bin"
+
+- Randomize the UID of "mario.bin" and save to "mario2.bin":
+   > amiitool -r -k retail.bin -i "mario.bin" -o "mario2.bin"
